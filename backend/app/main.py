@@ -7,7 +7,7 @@ app = FastAPI(title="Storage Box Inventory API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://home-organisation.vercel.app"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
