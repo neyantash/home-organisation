@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Box inventory</title>
+<link rel="manifest" href="manifest.json" />
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 20px; }
+  input, button { font-size: 16px; padding: 8px; }
+  .item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+  .item button { font-size: 12px; padding: 4px 8px; }
+</style>
+</head>
+<body>
+  <h2 id="boxLabel">Box</h2>
+  <div id="items"></div>
+  <input id="newItem" placeholder="Add item name" />
+  <button onclick="addItem()">Add</button>
+
+  <hr />
+  <h3>Search across all boxes</h3>
+  <input id="searchQuery" placeholder="Search..." />
+  <button onclick="search()">Search</button>
+  <div id="searchResults"></div>
+
+<script>
+  const API_BASE = "http://localhost:8000";
+
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("box");
+
+  async function loadBox() {
+    if (!token) return;
+    const box = await fetch(`${API_BASE}/boxes/${token}`).then(r => r.json());
+    document.getElementById("boxLabel").textContent = box.label || `Box ${box.token}`;
+    await loadItems();
+  }
+
+  async function loadItems() {
+    const items = await fetch(`${API_BASE}/boxes/${token}/items`).then(r => r.json());
+    const el = document.getElementById("items");
+    el.innerHTML = "";
+    items.forEach(it => {
+      const row = document.createElement("div");
+      row.className = "item";
+      row.innerHTML = `<span>${it.name}</span><button onclick="removeItem('${it.id}')">Remove</button>`;
+      el.appendChild(row);
+    });
+  }
+
+  async function addItem() {
+    const name = document.getElementById("newItem").value.trim();
+    if (!name) return;
+    await fetch(`${API_BASE}/boxes/${token}/items`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name })
+    });
+    document.getElementById("newItem").value = "";
+    await loadItems();
+  }
+
+  async function removeItem(itemId) {
+    await fetch(`${API_BASE}/items/${itemId}/remove`, { method: "PATCH" });
+    await loadItems();
+  }
+
+  async function search() {
+    const q = document.getElementById("searchQuery").value.trim();
+    if (!q) return;
+    const results = await fetch(`${API_BASE}/search?q=${encodeURIComponent(q)}`).then(r => r.json());
+    const el = document.getElementById("searchResults");
+    el.innerHTML = "";
+    results.forEach(r => {
+      const row = document.createElement("div");
+      row.className = "item";
+      row.innerHTML = `<span>${r.item_name} — <a href="index.html?box=${r.box_token}">${r.box_label || r.box_token}</a></span><span>${Math.round(r.score * 100)}%</span>`;
+      el.appendChild(row);
+    });
+  }
+
+  loadBox();
+</script>
+</body>
+</html>
