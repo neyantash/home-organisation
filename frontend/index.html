@@ -31,11 +31,27 @@
   const token = params.get("box");
 
   async function loadBox() {
-    if (!token) return;
-    const box = await fetch(`${API_BASE}/boxes/${token}`).then(r => r.json());
-    document.getElementById("boxLabel").textContent = box.label || `Box ${box.token}`;
-    await loadItems();
+  if (!token) return;
+  const box = await fetch(`${API_BASE}/boxes/${token}`).then(r => r.json());
+  if (box.label) {
+    document.getElementById("boxLabel").textContent = box.label;
+  } else {
+    document.getElementById("boxLabel").innerHTML =
+      `<input id="claimInput" placeholder="Name this box" /> <button onclick="claimBox()">Save</button>`;
   }
+  await loadItems();
+}
+
+async function claimBox() {
+  const label = document.getElementById("claimInput").value.trim();
+  if (!label) return;
+  await fetch(`${API_BASE}/boxes/${token}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ label })
+  });
+  await loadBox();
+}
 
   async function loadItems() {
     const items = await fetch(`${API_BASE}/boxes/${token}/items`).then(r => r.json());
