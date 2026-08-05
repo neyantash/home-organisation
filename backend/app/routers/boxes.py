@@ -41,3 +41,12 @@ def list_items(token: str, db: Session = Depends(get_db)):
         .order_by(models.Item.created_at.desc())
         .all()
     )
+@router.patch("/{token}", response_model=schemas.BoxOut)
+def rename_box(token: str, payload: schemas.BoxUpdate, db: Session = Depends(get_db)):
+    box = db.query(models.Box).filter(models.Box.token == token).first()
+    if not box:
+        raise HTTPException(status_code=404, detail="Box not found")
+    box.label = payload.label
+    db.commit()
+    db.refresh(box)
+    return box

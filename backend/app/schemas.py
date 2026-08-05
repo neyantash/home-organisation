@@ -17,7 +17,8 @@ class BoxOut(BaseModel):
     class Config:
         from_attributes = True
 
-
+class BoxUpdate(BaseModel):
+    label: str
 class ItemCreate(BaseModel):
     name: str
 
